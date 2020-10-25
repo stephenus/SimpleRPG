@@ -35,6 +35,7 @@ func test_position(position : Vector2):
 func instance_skeleton():
 	var skeleton = skeleton_scene.instance()
 	add_child(skeleton)
+	skeleton.connect("death", self, "_on_Skeleton_death")
 	
 	var valid_position = false
 	while not valid_position:
@@ -49,3 +50,6 @@ func _on_Timer_timeout() -> void:
 	if skeleton_count < max_skeletons:
 		instance_skeleton()
 		skeleton_count = skeleton_count + 1
+		
+func _on_Skeleton_death():
+	skeleton_count = skeleton_count - 1

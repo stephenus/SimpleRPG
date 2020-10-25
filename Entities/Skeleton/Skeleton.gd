@@ -1,5 +1,7 @@
 extends KinematicBody2D
 
+signal death
+
 var player
 
 var rnd = RandomNumberGenerator.new()
@@ -9,6 +11,10 @@ var direction : Vector2
 var last_direction = Vector2(0, 1)
 var bounce_countdown = 0
 var other_animation_playing = false
+
+var health = 100
+var health_max = 100
+var health_regeneration = 1
 
 func _ready() -> void:
 	player = get_tree().root.get_node("Root/Player")
@@ -54,24 +60,37 @@ func _on_Timer_timeout():
 		bounce_countdown = bounce_countdown - 1
 
 func _physics_process(delta):
-	var movement = direction * speed * delta
-	
-	var collision = move_and_collide(movement)
-	
+	var movement = direction * speed * delta	
+	var collision = move_and_collide(movement)	
 	if collision != null and collision.collider.name != "Player":
 		direction = direction.rotated(rnd.randf_range(PI/4, PI/2))
-		bounce_countdown = rnd.randi_range(2, 5)
-		
+		bounce_countdown = rnd.randi_range(2, 5)		
 	if not other_animation_playing:
 		animates_monster(direction)
 
 func arise():
 	other_animation_playing = true
 	$AnimatedSprite.play("birth")
-
+	
+func hit(damage):
+	health -= damage
+	if health > 0:
+		$AnimationPlayer.play("Hit")
+	else:
+		$Timer.stop()
+		direction = Vector2.ZERO
+		set_process(false)
+		other_animation_playing = true
+		$AnimatedSprite.play("death")
+		emit_signal("death")
 
 func _on_AnimatedSprite_animation_finished() -> void:
 	if $AnimatedSprite.animation == "birth":
 		$AnimatedSprite.animation = "down_idle"
 		$Timer.start()
+	elif $AnimatedSprite.animation == "death":
+		get_tree().queue_delete(self)
 	other_animation_playing = false
+	
+func _process(delta):	
+	health = min(health + health_regeneration * delta, health_max)

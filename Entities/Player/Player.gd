@@ -39,7 +39,7 @@ func _physics_process(delta):
 	direction.y = Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
 		
 	if abs(direction.x) == 1 and abs(direction.y) == 1:
-		direction = direction.normalized()	
+		direction = direction.normalized()
 	
 	var movement = speed * direction * delta
 	if attack_playing:
@@ -47,6 +47,9 @@ func _physics_process(delta):
 	move_and_collide(movement)
 	if not attack_playing:
 		animates_player(direction)
+		
+	if direction != Vector2.ZERO:
+		$RayCast2D.cast_to = direction.normalized() * 8
 
 func animates_player(direction: Vector2):
 	if direction != Vector2.ZERO:
@@ -74,11 +77,13 @@ func _input(event):
 	if event.is_action_pressed("attack"):
 		var now = OS.get_ticks_msec()
 		if now >= next_attack_time:
-			# Play attack animation
+			var target = $RayCast2D.get_collider()
+			if target != null:
+				if target.name.find("Skeleton") >= 0:
+					target.hit(attack_damage)
 			attack_playing = true
 			var animation = get_animation_direction(last_direction) + "_attack"
 			$Sprite.play(animation)
-			# Add cooldown time to current time
 			next_attack_time = now + attack_cooldown_time
 	elif event.is_action_pressed("fireball"):
 		if mana >= 25:
