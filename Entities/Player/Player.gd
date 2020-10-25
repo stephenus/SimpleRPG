@@ -93,6 +93,14 @@ func _input(event):
 			var animation = get_animation_direction(last_direction) + "_fireball"
 			$Sprite.play(animation)
 
-
 func _on_Sprite_animation_finished() -> void:
 	attack_playing = false
+	
+func hit(damage):
+	health -= damage
+	emit_signal("player_stats_changed", self)
+	if health <= 0:
+		set_process(false)
+		$AnimationPlayer.play("GameOver")
+	else:
+		$AnimationPlayer.play("Hit")

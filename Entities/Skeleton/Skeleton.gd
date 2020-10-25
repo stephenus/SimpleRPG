@@ -16,6 +16,10 @@ var health = 100
 var health_max = 100
 var health_regeneration = 1
 
+var attack_damage = 10
+var attack_cooldown_time = 1500
+var next_attack_time = 0
+
 func _ready() -> void:
 	player = get_tree().root.get_node("Root/Player")
 	rnd.randomize()
@@ -67,6 +71,9 @@ func _physics_process(delta):
 		bounce_countdown = rnd.randi_range(2, 5)		
 	if not other_animation_playing:
 		animates_monster(direction)
+	
+	if direction != Vector2.ZERO:
+		$RayCast2D.cast_to = direction.normalized() * 16
 
 func arise():
 	other_animation_playing = true
@@ -94,3 +101,19 @@ func _on_AnimatedSprite_animation_finished() -> void:
 	
 func _process(delta):	
 	health = min(health + health_regeneration * delta, health_max)
+	
+	var now = OS.get_ticks_msec()
+	if now >= next_attack_time:	
+		var target = $RayCast2D.get_collider()
+		if target != null and target.name == "Player" and player.health > 0:
+			other_animation_playing = true
+			var animation = get_animation_direction(last_direction) + "_attack"
+			$AnimatedSprite.play(animation)
+			next_attack_time = now + attack_cooldown_time
+
+
+func _on_AnimatedSprite_frame_changed() -> void:
+	if $AnimatedSprite.animation.ends_with("_attack") and $AnimatedSprite.frame == 1:
+		var target = $RayCast2D.get_collider()
+		if target != null and target.name == "Player" and player.health > 0:
+			player.hit(attack_damage)
